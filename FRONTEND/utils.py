@@ -3,15 +3,29 @@ import os
 from io import BytesIO
 from typing import Dict, Any, Optional
 import requests
+import streamlit as st
 from PIL import Image
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+
+def get_api_base_url() -> str:
+    """Read backend URL from Streamlit secrets, environment, or local default."""
+    base_url = os.getenv("API_BASE_URL")
+    if not base_url:
+        try:
+            base_url = st.secrets.get("API_BASE_URL")
+        except Exception:
+            base_url = None
+    return (base_url or "http://127.0.0.1:8000").rstrip("/")
+
+
+API_BASE_URL = get_api_base_url()
+REQUEST_HEADERS = {"ngrok-skip-browser-warning": "true"}
 
 
 def check_backend_health(base_url: str = API_BASE_URL) -> bool:
     """Check if FastAPI backend is reachable and responsive."""
     try:
-        resp = requests.get(f"{base_url}/health", timeout=3)
+        resp = requests.get(f"{base_url}/health", headers=REQUEST_HEADERS, timeout=8)
         return resp.status_code == 200
     except Exception:
         return False
@@ -20,7 +34,7 @@ def check_backend_health(base_url: str = API_BASE_URL) -> bool:
 def get_backend_info(base_url: str = API_BASE_URL) -> Optional[Dict[str, Any]]:
     """Retrieve backend metadata, classes, and loaded status."""
     try:
-        resp = requests.get(f"{base_url}/api/info", timeout=3)
+        resp = requests.get(f"{base_url}/api/info", headers=REQUEST_HEADERS, timeout=8)
         if resp.status_code == 200:
             return resp.json()
     except Exception:
@@ -31,7 +45,7 @@ def get_backend_info(base_url: str = API_BASE_URL) -> Optional[Dict[str, Any]]:
 def get_sample_images(base_url: str = API_BASE_URL) -> Dict[str, list]:
     """Retrieve list of sample test images grouped by class."""
     try:
-        resp = requests.get(f"{base_url}/api/sample-images", timeout=5)
+        resp = requests.get(f"{base_url}/api/sample-images", headers=REQUEST_HEADERS, timeout=8)
         if resp.status_code == 200:
             return resp.json()
     except Exception:
@@ -43,7 +57,7 @@ def get_sample_image_bytes(class_name: str, filename: str, base_url: str = API_B
     """Download bytes of a specific test sample from the backend."""
     try:
         url = f"{base_url}/api/sample-image/{class_name}/{filename}"
-        resp = requests.get(url, timeout=10)
+        resp = requests.get(url, headers=REQUEST_HEADERS, timeout=10)
         if resp.status_code == 200:
             return resp.content
     except Exception:
@@ -58,7 +72,7 @@ def predict_image(image_bytes: bytes, filename: str = "mri.jpg", base_url: str =
     """
     files = {"file": (filename, image_bytes, "image/jpeg")}
     try:
-        resp = requests.post(f"{base_url}/api/predict", files=files, timeout=60)
+        resp = requests.post(f"{base_url}/api/predict", files=files, headers=REQUEST_HEADERS, timeout=60)
         if resp.status_code == 200:
             return resp.json()
         else:

@@ -248,6 +248,7 @@ with st.sidebar:
         st.success("● FastAPI Backend: Connected (Port 8000)")
     else:
         st.error("● FastAPI Backend: Offline")
+        st.caption(f"Configured API: `{API_BASE_URL}`")
         st.caption(f"Run `uvicorn BACKEND.main:app --port 8000` to start backend.")
 
     st.divider()
