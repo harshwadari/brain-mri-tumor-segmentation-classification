@@ -1,4 +1,3 @@
-import os
 import joblib
 import numpy as np
 import pandas as pd
@@ -14,43 +13,6 @@ from BACKEND.config import (
     CLASS_NAMES,
 )
 from BACKEND.segmentation import clean_prediction_mask, apply_morphological_closing
-
-
-def ensure_unet_model_file():
-    """
-    Keep local development simple: if MODELS/best_unet.keras exists, use it.
-    On Render, download it once from Google Drive when the file is missing.
-    """
-    if UNET_MODEL_PATH.exists():
-        return
-
-    model_id = os.getenv("MODEL_ID")
-    if not model_id:
-        raise FileNotFoundError(
-            "U-Net model file not found at "
-            f"{UNET_MODEL_PATH}. For local development, place best_unet.keras in "
-            "the MODELS directory. For Render, set the MODEL_ID environment "
-            "variable to the Google Drive file ID."
-        )
-
-    try:
-        import gdown
-    except ImportError as exc:
-        raise RuntimeError(
-            "gdown is required to download best_unet.keras from Google Drive. "
-            "Add gdown to requirements.txt and redeploy."
-        ) from exc
-
-    UNET_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    url = f"https://drive.google.com/uc?id={model_id}"
-    print(f"--> U-Net model not found locally. Downloading from Google Drive to {UNET_MODEL_PATH}...")
-    downloaded_path = gdown.download(url, str(UNET_MODEL_PATH), quiet=False)
-
-    if not downloaded_path or not UNET_MODEL_PATH.exists():
-        raise RuntimeError(
-            "Failed to download U-Net model from Google Drive. Check that MODEL_ID "
-            "is correct and the Drive file is accessible to anyone with the link."
-        )
 
 
 class ModelManager:
@@ -74,7 +36,8 @@ class ModelManager:
             return
 
         print("--> Loading U-Net Segmentation Model...")
-        ensure_unet_model_file()
+        if not UNET_MODEL_PATH.exists():
+            raise FileNotFoundError(f"U-Net model file not found at: {UNET_MODEL_PATH}")
         self.unet = tf.keras.models.load_model(str(UNET_MODEL_PATH), compile=False)
 
         print("--> Loading Feature Scaler...")

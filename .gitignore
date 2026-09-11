@@ -21,12 +21,9 @@ ENV/
 # =========================
 # Datasets / Large Files
 # =========================
+MODELS/
 DATASET/
 brisc2025/
-
-# Keep large U-Net files out of GitHub. Render downloads best_unet.keras
-# from Google Drive into MODELS/best_unet.keras when MODEL_ID is set.
-MODELS/*.keras
 
 # =========================
 # Generated Images / Outputs
