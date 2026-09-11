@@ -14,7 +14,7 @@ from BACKEND.config import (
 )
 from BACKEND.preprocessing import preprocess_mri, resize_image, convert_to_grayscale
 from BACKEND.segmentation import extract_tumor_roi, create_roi_overlay
-from BACKEND.features import extract_glcm_features
+from BACKEND.features import create_feature_names, extract_glcm_features
 from BACKEND.models import model_manager
 from BACKEND.schemas import (
     PredictionResponse,
@@ -209,6 +209,7 @@ async def predict_brain_mri(file: UploadFile = File(...)):
         name="GLCM Texture Feature Extraction",
         description="Computed 96 Haralick texture features across 4 distances, 4 angles, and 6 statistical properties."
     ))
+    glcm_feature_names = create_feature_names()
 
     # 6. StandardScaler, PCA & Dual Classification (SVM + KNN)
     try:
@@ -242,6 +243,8 @@ async def predict_brain_mri(file: UploadFile = File(...)):
     metadata_payload = PipelineMetadata(
         glcm_features_extracted=True,
         glcm_features_count=96,
+        glcm_feature_names=glcm_feature_names,
+        glcm_feature_values=glcm_feat.tolist(),
         pca_applied=True,
         pca_components_count=5,
         pca_components=pca_values,

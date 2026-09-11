@@ -5,7 +5,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODELS_DIR = PROJECT_ROOT / "MODELS"
 DATASET_DIR = PROJECT_ROOT / "DATASET"
-FEATURES_DIR = DATASET_DIR / "Features(1)"
+FEATURES_DIR = PROJECT_ROOT / "Features"
 
 # Model Weights and Artifact Paths
 UNET_MODEL_PATH = MODELS_DIR / "best_unet.keras"

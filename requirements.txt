@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+streamlit
+requests
+tensorflow
+opencv-python-headless
+scikit-learn
+scikit-image
+numpy
+pandas
+Pillow
+joblib

@@ -29,6 +29,8 @@ class PipelineImages(BaseModel):
 class PipelineMetadata(BaseModel):
     glcm_features_extracted: bool = True
     glcm_features_count: int = 96
+    glcm_feature_names: List[str] = Field(default_factory=list)
+    glcm_feature_values: List[float] = Field(default_factory=list)
     pca_applied: bool = True
     pca_components_count: int = 5
     pca_components: List[float] = Field(default_factory=list)

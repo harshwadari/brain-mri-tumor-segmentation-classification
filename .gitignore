@@ -21,9 +21,12 @@ ENV/
 # =========================
 # Datasets / Large Files
 # =========================
-MODELS/
 DATASET/
 brisc2025/
+
+# Keep large U-Net files out of GitHub. Upload/mount best_unet.keras
+# separately on Render at MODELS/best_unet.keras.
+MODELS/*.keras
 
 # =========================
 # Generated Images / Outputs

@@ -576,3 +576,15 @@ if result:
                 "Component Filtering": "Minimum Area ≥ 50 px",
                 "U-Net Threshold": "0.5 (Sigmoid output)",
             })
+
+        glcm_names = meta.get("glcm_feature_names") or [
+            f"Feature {i + 1}" for i in range(len(meta.get("glcm_feature_values", [])))
+        ]
+        glcm_values = meta.get("glcm_feature_values", [])
+        if glcm_values:
+            st.markdown("**Extracted GLCM Feature Table**")
+            glcm_df = pd.DataFrame({
+                "Feature": glcm_names,
+                "Value": glcm_values,
+            })
+            st.dataframe(glcm_df, use_container_width=True, height=320)
