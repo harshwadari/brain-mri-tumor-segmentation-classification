@@ -1,13 +1,4 @@
-fastapi
-uvicorn
-python-multipart
 streamlit
 requests
-tensorflow-cpu==2.20.0
-opencv-python-headless
-scikit-learn
-scikit-image
-numpy
 pandas
 Pillow
-joblib
