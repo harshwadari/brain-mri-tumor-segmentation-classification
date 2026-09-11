@@ -16,6 +16,43 @@ from BACKEND.config import (
 from BACKEND.segmentation import clean_prediction_mask, apply_morphological_closing
 
 
+def ensure_unet_model_file():
+    """
+    Keep local development simple: if MODELS/best_unet.keras exists, use it.
+    On Render, download it once from Google Drive when the file is missing.
+    """
+    if UNET_MODEL_PATH.exists():
+        return
+
+    model_id = os.getenv("MODEL_ID")
+    if not model_id:
+        raise FileNotFoundError(
+            "U-Net model file not found at "
+            f"{UNET_MODEL_PATH}. For local development, place best_unet.keras in "
+            "the MODELS directory. For Render, set the MODEL_ID environment "
+            "variable to the Google Drive file ID."
+        )
+
+    try:
+        import gdown
+    except ImportError as exc:
+        raise RuntimeError(
+            "gdown is required to download best_unet.keras from Google Drive. "
+            "Add gdown to requirements.txt and redeploy."
+        ) from exc
+
+    UNET_MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    url = f"https://drive.google.com/uc?id={model_id}"
+    print(f"--> U-Net model not found locally. Downloading from Google Drive to {UNET_MODEL_PATH}...")
+    downloaded_path = gdown.download(url, str(UNET_MODEL_PATH), quiet=False)
+
+    if not downloaded_path or not UNET_MODEL_PATH.exists():
+        raise RuntimeError(
+            "Failed to download U-Net model from Google Drive. Check that MODEL_ID "
+            "is correct and the Drive file is accessible to anyone with the link."
+        )
+
+
 class ModelManager:
     """
     Singleton class managing the lifecycle and inference of all machine learning
@@ -37,27 +74,26 @@ class ModelManager:
             return
 
         print("--> Loading U-Net Segmentation Model...")
-        if not os.path.exists(UNET_MODEL_PATH):
-            raise FileNotFoundError(f"U-Net model file not found at: {UNET_MODEL_PATH}")
+        ensure_unet_model_file()
         self.unet = tf.keras.models.load_model(str(UNET_MODEL_PATH), compile=False)
 
         print("--> Loading Feature Scaler...")
-        if not os.path.exists(SCALER_PATH):
+        if not SCALER_PATH.exists():
             raise FileNotFoundError(f"Scaler file not found at: {SCALER_PATH}")
         self.scaler = joblib.load(str(SCALER_PATH))
 
         print("--> Loading PCA Pipeline...")
-        if not os.path.exists(PCA_PATH):
+        if not PCA_PATH.exists():
             raise FileNotFoundError(f"PCA file not found at: {PCA_PATH}")
         self.pca = joblib.load(str(PCA_PATH))
 
         print("--> Loading SVM Classifier...")
-        if not os.path.exists(SVM_MODEL_PATH):
+        if not SVM_MODEL_PATH.exists():
             raise FileNotFoundError(f"SVM model file not found at: {SVM_MODEL_PATH}")
         self.svm = joblib.load(str(SVM_MODEL_PATH))
 
         print("--> Loading KNN Classifier...")
-        if not os.path.exists(KNN_MODEL_PATH):
+        if not KNN_MODEL_PATH.exists():
             raise FileNotFoundError(f"KNN model file not found at: {KNN_MODEL_PATH}")
         self.knn = joblib.load(str(KNN_MODEL_PATH))
 
