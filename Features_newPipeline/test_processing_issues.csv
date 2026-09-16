@@ -1,0 +1,9 @@
+image_name,split,error_type,error_message
+brisc2025_test_00005_gl_ax_t1.npy,test,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_test_00017_gl_ax_t1.npy,test,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_test_00054_gl_ax_t1.npy,test,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_test_00062_gl_ax_t1.npy,test,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_test_00140_gl_co_t1.npy,test,ValueError,No pixel pairs for at least one GLCM offset; crop too small
+brisc2025_test_00156_gl_co_t1.npy,test,ValueError,No pixel pairs for at least one GLCM offset; crop too small
+brisc2025_test_00372_me_ax_t1.npy,test,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_test_00910_pi_co_t1.npy,test,EmptyMaskError,No foreground after thresholding/component filtering

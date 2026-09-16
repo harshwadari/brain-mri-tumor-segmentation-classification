@@ -1,0 +1,20 @@
+image_name,split,error_type,error_message
+brisc2025_train_00018_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00027_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00074_gl_ax_t1.npy,train,ValueError,No pixel pairs for at least one GLCM offset; crop too small
+brisc2025_train_00193_gl_ax_t1.npy,train,ValueError,No pixel pairs for at least one GLCM offset; crop too small
+brisc2025_train_00206_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00210_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00211_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00213_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00223_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00224_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00250_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00290_gl_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00713_gl_co_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_00749_gl_co_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_01065_gl_sa_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_01352_me_ax_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_01673_me_co_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_02087_me_sa_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
+brisc2025_train_02341_me_sa_t1.npy,train,EmptyMaskError,No foreground after thresholding/component filtering
