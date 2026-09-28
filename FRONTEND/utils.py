@@ -97,6 +97,14 @@ def base64_to_pil(b64_data_url: str) -> Image.Image:
     return Image.open(BytesIO(image_bytes))
 
 
+def get_feature_table(pipeline: str, split: str, offset: int = 0, base_url: str = API_BASE_URL):
+    response = requests.get(f"{base_url}/api/feature-tables/{pipeline}",
+                            params={"split": split, "offset": offset, "limit": 25},
+                            headers=REQUEST_HEADERS, timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+
 """
 | HTTP Method | Endpoint                                    | Function in `utils.py`     | Purpose                                    |
 | ----------- | ------------------------------------------- | -------------------------- | ------------------------------------------ |

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import cv2
 import numpy as np
+import pandas as pd
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -16,6 +17,9 @@ from BACKEND.preprocessing import preprocess_mri, resize_image, convert_to_grays
 from BACKEND.segmentation import extract_tumor_roi, create_roi_overlay
 from BACKEND.features import create_feature_names, extract_glcm_features
 from BACKEND.models import model_manager
+from BACKEND.dwt import dwt_model_manager
+from BACKEND.ensemble import combine_predictions
+from BACKEND.features import extract_dwt_features, create_dwt_feature_names
 from BACKEND.schemas import (
     PredictionResponse,
     PipelineImages,
@@ -132,7 +136,7 @@ async def predict_brain_mri(file: UploadFile = File(...)):
     4. Post-processing (Connected Component QC + Morphological Closing)
     5. Tumor ROI extraction & red-blend overlay with yellow contour
     6. 96 GLCM feature extraction from cropped ROI
-    7. Standard scaling & PCA projection (5 components)
+    7. Standard scaling & PCA projection (saved component count)
     8. Dual classification via SVM & KNN
     """
     start_time = time.perf_counter()
@@ -221,12 +225,36 @@ async def predict_brain_mri(file: UploadFile = File(...)):
 
     stages_executed.append(PipelineStage(
         name="Standardization & PCA Dimensionality Reduction",
-        description="Standardized 96 GLCM features and projected to 5 principal components (capturing 95% variance)."
+        description=f"Standardized 96 GLCM features and projected to {len(pca_values)} principal components."
     ))
 
     stages_executed.append(PipelineStage(
         name="Dual-Model Machine Learning Classification",
         description=f"SVM Predicted: {svm_data['prediction']} ({svm_data['score']}%) | KNN Predicted: {knn_data['prediction']} ({knn_data['score']}%)."
+    ))
+
+    dwt_result = None
+    dwt_knn_result = None
+    dwt_metadata = {"dwt_status": "error"}
+    try:
+        dwt_features = extract_dwt_features(roi)
+        if dwt_features is None:
+            raise ValueError("The tumor ROI is empty; DWT classification was not run.")
+        dwt_metadata.update(dwt_feature_names=create_dwt_feature_names(),
+                            dwt_feature_values=dwt_features.tolist())
+        dwt_pca, dwt_data, dwt_knn_data = dwt_model_manager.classify_features(dwt_features)
+        dwt_result = ClassificationModelResult(**dwt_data)
+        dwt_knn_result = ClassificationModelResult(**dwt_knn_data)
+        dwt_metadata.update(dwt_status="success", dwt_pca_components=dwt_pca,
+                            dwt_pca_feature_names=dwt_model_manager.pca_feature_names)
+    except Exception as e:
+        # Optional branch: retain all successful GLCM/U-Net results.
+        dwt_metadata["dwt_error"] = f"DWT analysis unavailable: {e}"
+    stages_executed.append(PipelineStage(
+        name="DWT Feature Extraction & SVM + KNN Classification",
+        status="completed" if dwt_result else "failed",
+        description=("Haar DWT -> saved StandardScaler -> saved PCA -> saved SVM and KNN."
+                     if dwt_result else dwt_metadata["dwt_error"]),
     ))
 
     execution_time_ms = round((time.perf_counter() - start_time) * 1000.0, 1)
@@ -241,12 +269,13 @@ async def predict_brain_mri(file: UploadFile = File(...)):
     )
 
     metadata_payload = PipelineMetadata(
+        **dwt_metadata,
         glcm_features_extracted=True,
         glcm_features_count=96,
         glcm_feature_names=glcm_feature_names,
         glcm_feature_values=glcm_feat.tolist(),
         pca_applied=True,
-        pca_components_count=5,
+        pca_components_count=len(pca_values),
         pca_components=pca_values,
         segmentation_model="U-Net",
         tumor_detected=has_tumor,
@@ -275,10 +304,37 @@ async def predict_brain_mri(file: UploadFile = File(...)):
     )
 
     return PredictionResponse(
+        ensemble=combine_predictions({"svm": svm_result, "knn": knn_result,
+                                      "dwt_svm": dwt_result, "dwt_knn": dwt_knn_result}),
         status="success",
         stages=stages_executed,
         images=images_payload,
         svm=svm_result,
         knn=knn_result,
+        dwt_svm=dwt_result,
+        dwt_knn=dwt_knn_result,
         metadata=metadata_payload,
     )
+
+
+@app.get("/api/feature-tables/{pipeline}", tags=["Metadata"])
+async def get_feature_table(pipeline: str, split: str = Query("test", pattern="^(train|test)$"),
+                            offset: int = Query(0, ge=0), limit: int = Query(25, ge=1, le=100)):
+    """Bounded reference-table pages, never substituted for uploaded-image features."""
+    files = {
+        "glcm": ("Features(1)", "glcm"),
+        "glcm_pca": ("Features(1)", "pca"),
+        "dwt": ("Features_DWT", "dwt"),
+        "dwt_pca": ("Features_DWT", "dwt_pca"),
+    }
+    if pipeline not in files:
+        raise HTTPException(status_code=404, detail="Unknown feature table.")
+    folder, prefix = files[pipeline]
+    path = DATASET_DIR / folder / f"{prefix}_{split}.csv"
+    try:
+        frame = pd.read_csv(path)
+    except FileNotFoundError:
+        raise HTTPException(status_code=503, detail=f"Feature table unavailable: {path.name}")
+    page = frame.iloc[offset:offset + limit].replace([np.inf, -np.inf], np.nan)
+    return {"source": f"{folder}/{path.name}", "split": split, "total": len(frame),
+            "columns": list(frame.columns), "rows": page.astype(object).where(pd.notna(page), None).to_dict("records")}

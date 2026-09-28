@@ -33,6 +33,9 @@ except ImportError:
     )
 
 # Page configuration
+from FRONTEND.dwt import render_dwt_result, render_reference_tables
+from FRONTEND.ensemble import render_ensemble_result
+
 st.set_page_config(
     page_title="Brain Tumor Analysis | AI Medical Diagnosis",
     layout="wide",
@@ -259,7 +262,7 @@ with st.sidebar:
         st.markdown("**Deployed Pipeline Specification**")
         st.caption(f"• **Segmentation**: U-Net (256×256)")
         st.caption(f"• **Texture Analysis**: GLCM (96 features)")
-        st.caption(f"• **Reduction**: PCA (5 components)")
+        st.caption(f"• **Reduction**: PCA (50 components)")
         st.caption(f"• **Classifiers**: SVM + KNN (k=5)")
         st.caption(f"• **Target Classes**: `glioma`, `meningioma`, `pituitary`")
     
@@ -366,7 +369,7 @@ PIPELINE_STAGES = [
     ("Connected Component QC & Morphology", "Removing small disconnected artifacts (<50 px) & applying 3×3 elliptical closing"),
     ("Tumor ROI Extraction & Visual Blend", "Extracting tumor region and generating semi-transparent overlay with yellow boundary"),
     ("GLCM Texture Feature Extraction", "Cropping bounding box, quantizing to 32 gray levels & extracting 96 Haralick features"),
-    ("Standardization & PCA Projection", "Standardizing features and projecting to 5 principal components (95% variance)"),
+    ("Standardization & PCA Projection", "Standardizing features and projecting to the saved GLCM PCA components"),
     ("Dual-Model SVM + KNN Classification", "Running tuned Support Vector Machine and K-Nearest Neighbors inference"),
 ]
 
@@ -395,7 +398,7 @@ if analyze_clicked and current_bytes:
 
     # Actual backend call
     try:
-        with st.spinner("Completing deep learning forward pass and feature extraction..."):
+        with st.spinner("Completing deep learning forward pass, GLCM and DWT analysis..."):
             result = predict_image(
                 current_bytes,
                 filename=current_filename,
@@ -409,7 +412,10 @@ if analyze_clicked and current_bytes:
             for name, _ in PIPELINE_STAGES:
                 badges_html += f"<span class='pipeline-stage-badge stage-completed'>✓ {name}</span>"
             badges_html += "<div class='pipeline-line' style='--progress: 100%;'></div>"
-            badges_html += "<div class='pipeline-status'>All stages completed successfully.</div></div>"
+            completion_text = ("GLCM analysis completed; DWT is unavailable."
+                               if result.get("metadata", {}).get("dwt_status") == "error"
+                               else "Analysis completed successfully.")
+            badges_html += f"<div class='pipeline-status'>{completion_text}</div></div>"
             progress_placeholder.markdown(badges_html, unsafe_allow_html=True)
 
     except Exception as err:
@@ -458,7 +464,7 @@ if result:
             </div>
             <div class="verification-row">
                 <span class="verif-badge">✓ GLCM Features Extracted: Yes (96)</span>
-                <span class="verif-badge">✓ PCA Applied: Yes (5 Components)</span>
+                <span class="verif-badge">✓ PCA Applied: Yes ({len(meta["pca_components"])} Components)</span>
                 <span class="verif-badge">✓ Segmentation: U-Net Deep Learning (256×256)</span>
                 <span class="verif-badge">✓ Tumor Pixels: {meta['tumor_pixel_count']:,} ({meta['tumor_area_percentage']}%)</span>
                 <span class="verif-badge">✓ Latency: {meta['execution_time_ms']} ms</span>
@@ -556,11 +562,11 @@ if result:
         st.image(base64_to_pil(images["roi_overlay"]), use_container_width=True)
 
     # 4. Detailed Diagnostic & Feature Inspection (Expandable)
-    with st.expander("🔍 Detailed Diagnostic & Feature Analysis (Click to Expand)", expanded=False):
+    with st.expander("🔍 Detailed Diagnostic & Feature Analysis — GLCM + PCA", expanded=True):
         f_col1, f_col2 = st.columns([1, 1])
 
         with f_col1:
-            st.markdown("**Principal Component Analysis (PCA) Coordinates**")
+            st.markdown(f"**GLCM + PCA — Principal Component Analysis ({len(meta['pca_components'])} Components)**")
             pca_df = pd.DataFrame({
                 "Principal Component": [f"PC{i+1}" for i in range(len(meta["pca_components"]))],
                 "Score Value": meta["pca_components"],
@@ -583,9 +589,13 @@ if result:
         ]
         glcm_values = meta.get("glcm_feature_values", [])
         if glcm_values:
-            st.markdown("**Extracted GLCM Feature Table**")
+            st.markdown(f"**Extracted GLCM Feature Table ({len(glcm_values)} Features)**")
             glcm_df = pd.DataFrame({
                 "Feature": glcm_names,
                 "Value": glcm_values,
             })
             st.dataframe(glcm_df, use_container_width=True, height=320)
+
+    render_dwt_result(result)
+    render_reference_tables()
+    render_ensemble_result(result)

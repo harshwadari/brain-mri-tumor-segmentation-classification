@@ -9,7 +9,7 @@ from BACKEND.config import (
 )
 
 
-def crop_tumor_roi(roi: np.ndarray):
+def crop_tumor_roi(roi: np.ndarray, padding: int = 0):
     """
     Crop the saved tumor ROI to the bounding box containing non-zero tumor pixels.
     Exact reproduction from Feauture_Extraction_1.ipynb:
@@ -22,6 +22,9 @@ def crop_tumor_roi(roi: np.ndarray):
 
     x_min, x_max = np.min(x_coords), np.max(x_coords)
     y_min, y_max = np.min(y_coords), np.max(y_coords)
+
+    x_min, x_max = max(0, x_min - padding), min(roi.shape[1] - 1, x_max + padding)
+    y_min, y_max = max(0, y_min - padding), min(roi.shape[0] - 1, y_max + padding)
 
     cropped_roi = roi[y_min:y_max + 1, x_min:x_max + 1]
     return cropped_roi
@@ -95,3 +98,32 @@ def create_feature_names() -> list:
             for angle_name in angle_labels:
                 feature_names.append(f"{property_name}_d{distance}_a{angle_name}")
     return feature_names
+
+
+def create_dwt_feature_names() -> list:
+    return [f"DWT_{band}_{stat}" for band in ("LL", "LH", "HL", "HH")
+            for stat in ("mean", "std", "variance", "energy", "entropy")]
+
+
+def extract_dwt_features(roi: np.ndarray):
+    """Match Feature_Extraction_DWT.ipynb: padded ROI, Haar level 1, 20 stats."""
+    import pywt
+
+    cropped = crop_tumor_roi(roi, padding=5)
+    if cropped is None:
+        return None
+    prepared = cv2.normalize(cropped.astype(np.float32), None, 0.0, 1.0, cv2.NORM_MINMAX)
+    ll, (lh, hl, hh) = pywt.dwt2(prepared, "haar")
+    values = []
+    for coefficients in (ll, lh, hl, hh):
+        coefficients = coefficients.astype(np.float32)
+        absolute = np.abs(coefficients)
+        total = np.sum(absolute)
+        entropy = 0.0
+        if total != 0:
+            probabilities = absolute / total
+            probabilities = probabilities[probabilities > 0]
+            entropy = -np.sum(probabilities * np.log2(probabilities))
+        values.extend([np.mean(coefficients), np.std(coefficients), np.var(coefficients),
+                       np.sum(coefficients ** 2), entropy])
+    return np.asarray(values, dtype=np.float32)

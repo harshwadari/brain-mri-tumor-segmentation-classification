@@ -27,12 +27,18 @@ class PipelineImages(BaseModel):
 
 
 class PipelineMetadata(BaseModel):
+    dwt_status: str = "unavailable"
+    dwt_error: Optional[str] = None
+    dwt_feature_names: List[str] = Field(default_factory=list)
+    dwt_feature_values: List[float] = Field(default_factory=list)
+    dwt_pca_feature_names: List[str] = Field(default_factory=list)
+    dwt_pca_components: List[float] = Field(default_factory=list)
     glcm_features_extracted: bool = True
     glcm_features_count: int = 96
     glcm_feature_names: List[str] = Field(default_factory=list)
     glcm_feature_values: List[float] = Field(default_factory=list)
     pca_applied: bool = True
-    pca_components_count: int = 5
+    pca_components_count: int = 50
     pca_components: List[float] = Field(default_factory=list)
     segmentation_model: str = "U-Net"
     tumor_detected: bool = True
@@ -41,7 +47,23 @@ class PipelineMetadata(BaseModel):
     execution_time_ms: float = 0.0
 
 
+class EnsembleResult(BaseModel):
+    status: str = "unavailable"
+    prediction: Optional[str] = None
+    score: Optional[float] = None
+    score_unit: str = "%"
+    probabilities: Dict[str, float] = Field(default_factory=dict)
+    voting_method: str = "Weighted Soft Voting"
+    weights: Dict[str, float] = Field(default_factory=dict)
+    weight_source: str = ""
+    model_predictions: Dict[str, str] = Field(default_factory=dict)
+    error: Optional[str] = None
+
+
 class PredictionResponse(BaseModel):
+    ensemble: Optional[EnsembleResult] = None
+    dwt_svm: Optional[ClassificationModelResult] = None
+    dwt_knn: Optional[ClassificationModelResult] = None
     status: str = "success"
     stages: List[PipelineStage] = Field(default_factory=list)
     images: PipelineImages

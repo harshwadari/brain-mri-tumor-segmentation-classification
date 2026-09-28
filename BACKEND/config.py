@@ -13,6 +13,12 @@ SCALER_PATH = FEATURES_DIR / "scaler.pkl"
 PCA_PATH = FEATURES_DIR / "pca.pkl"
 SVM_MODEL_PATH = MODELS_DIR / "final_svm.pkl"
 KNN_MODEL_PATH = MODELS_DIR / "pca_knn_glcm.joblib"
+DWT_FEATURES_DIR = DATASET_DIR / "Features_DWT"
+DWT_SCALER_PATH = DWT_FEATURES_DIR / "dwt_scaler.pkl"
+DWT_PCA_PATH = DWT_FEATURES_DIR / "dwt_pca.pkl"
+# Training_SVM_DWT.ipynb saves the DWT-only classifier under this name.
+DWT_SVM_MODEL_PATH = MODELS_DIR / "final_svm_fusion_pca.pkl"
+DWT_KNN_MODEL_PATH = MODELS_DIR / "pca_knn_dwt_final.joblib"
 
 # Image and Pipeline Parameters
 IMG_SIZE = 256
