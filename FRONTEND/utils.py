@@ -95,3 +95,15 @@ def base64_to_pil(b64_data_url: str) -> Image.Image:
         b64_str = b64_data_url
     image_bytes = base64.b64decode(b64_str)
     return Image.open(BytesIO(image_bytes))
+
+
+"""
+| HTTP Method | Endpoint                                    | Function in `utils.py`     | Purpose                                    |
+| ----------- | ------------------------------------------- | -------------------------- | ------------------------------------------ |
+| **GET*      | `/health`                                   | `check_backend_health()`   | Check whether FastAPI backend is running   |
+| **GET**     | `/api/info`                                 | `get_backend_info()`       | Get backend/model information              |
+| **GET**     | `/api/sample-images`                        | `get_sample_images()`      | Get available test images grouped by class |
+| **GET**     | `/api/sample-image/{class_name}/{filename}` | `get_sample_image_bytes()` | Download a particular sample MRI           |
+| **POST**    | `/api/predict`                              | `predict_image()`          | Send MRI to backend for actual prediction  |
+
+"""
