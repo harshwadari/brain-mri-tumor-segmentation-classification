@@ -363,12 +363,12 @@ with info_col:
 
 # Execution and Dynamic Progress Animation
 PIPELINE_STAGES = [
-    ("Image Validation & Decode", "Validating image headers, dimension checks, and decoding raw stream"),
+    ("Raw Image Retrieval", "Validating image headers, dimension checks, and decoding raw stream"),
     ("MRI Preprocessing", "Converting to grayscale, resizing to 256×256, 3×3 Gaussian denoising & Z-score normalization"),
     ("U-Net Deep Learning Segmentation", "Generating pixel-wise tumor probability map using trained U-Net (threshold 0.5)"),
-    ("Connected Component QC & Morphology", "Removing small disconnected artifacts (<50 px) & applying 3×3 elliptical closing"),
-    ("Tumor ROI Extraction & Visual Blend", "Extracting tumor region and generating semi-transparent overlay with yellow boundary"),
-    ("GLCM Texture Feature Extraction", "Cropping bounding box, quantizing to 32 gray levels & extracting 96 Haralick features"),
+    ("Segmented Mask Processing & Morphology", "Removing small disconnected artifacts (<50 px) & applying 3×3 elliptical closing"),
+    ("Tumor ROI Extraction ", "Extracting tumor region and generating semi-transparent overlay with yellow boundary"),
+    ("GLCM and DWT Feature Extraction", "Cropping bounding box, quantizing to 32 gray levels & extracting 96 Haralick features"),
     ("Standardization & PCA Projection", "Standardizing features and projecting to the saved GLCM PCA components"),
     ("Dual-Model SVM + KNN Classification", "Running tuned Support Vector Machine and K-Nearest Neighbors inference"),
 ]
@@ -425,7 +425,7 @@ if analyze_clicked and current_bytes:
 # Results Section
 result = st.session_state.get("analysis_result")
 if result:
-    st.markdown("## Classification Result")
+    st.markdown("## GLCM Classification Result")
 
     svm_data = result["svm"]
     knn_data = result["knn"]
